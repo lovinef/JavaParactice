@@ -1,44 +1,49 @@
 import javax.swing.text.html.Option;
 import java.awt.image.ImageProducer;
+import java.net.SocketTimeoutException;
+import java.sql.SQLOutput;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class TestMain4 {
     public static void main(String[] args) {
-        List<String> dishes = new ArrayList<>();
-        dishes = Dish.menu.stream()
-                .filter(d -> d.getCalories() > 300)
-                .map(Dish::getName)
-                .collect(Collectors.toList());
+        boolean booleanTest1 = Dish.menu.stream().anyMatch(d -> d.getCalories() > 500);
+        System.out.println(booleanTest1);
 
-        System.out.println(dishes.toString());
+        // calories > 500 인 첫번째 Dish 객체의 데이터 출력
+        // findAny(첫번째로 찾은 데이터 출력, 순서 상관 없음)
+        Dish.menu.stream().filter(d -> d.getCalories() > 500).findAny().ifPresent(dish -> System.out.println(dish.getName() + " / " + dish.getCalories()));
+        // findFirst(첫번째 데이터 출력)
+        Dish.menu.stream().filter(d -> d.getCalories() > 500).findFirst().ifPresent(dish -> System.out.println(dish.getName() + " / " + dish.getCalories()));
 
-        boolean has500Cal = Dish.menu.stream().filter(a -> a.getCalories() > 500).findAny().isPresent();
-        System.out.println(has500Cal);
+        System.out.println("forEach start");
+        Dish.menu.stream().filter(d -> d.getCalories() > 600).forEach(d ->{
+            System.out.println(d.getName());
+        });
+        System.out.println("forEach end");
 
-        Dish itsMe = Dish.menu.stream().filter(a -> "chicken".equals(a.getName())).findAny().get();
-        System.out.println(itsMe.getCalories());
+        Dish.menu.stream()
+                .filter(Dish::isVegetarian)
+                .filter(d -> "pork".equals(d.getName()))
+                .findFirst()
+                .ifPresent(d -> System.out.println(d.toString()));
 
-        List<Integer> numList = Arrays.asList(4, 5, 3, 9);
+        //Dish.menu.stream().map(Dish::getCalories).forEach(System.out::println);
 
-        int numListSum1 = numList.stream().reduce(0, Integer::sum);
-        System.out.println(numList);
-
-        Optional<Integer> maxNum = numList.stream().reduce(Integer::max);
-        System.out.println(maxNum);
-
-        // 가장 많은 칼로리를 가지는 객체
-        Dish imBig = Dish.menu.stream().sorted(Comparator.comparing(Dish::getCalories).reversed()).findFirst().get();
-        System.out.println(imBig.getName() + "/ " + imBig.getCalories());
-
-        Dish ImPizza = Dish.menu.stream().filter(a -> "pizza".equals(a.getName())).findAny().get();
-        int pizzaCnt = (int) Dish.menu.stream().filter(a -> "pizza".equals(a.getName())).count();
-        System.out.println(pizzaCnt);
-
-        Dish smallestDish = Dish.menu.stream()
-                                    .max(Comparator.comparing(Dish::getCalories)).get();
-        System.out.println(smallestDish.getName());
+        String[] strArray = {"a","b","c","d","e"};
+        Arrays.stream(strArray).filter("d"::equals).findFirst().ifPresent(System.out::println);
+        Arrays.stream(strArray)
+                .filter("e"::equals)
+                .findFirst()
+                .ifPresent(System.out::println);
 
 
+
+        int sum = Dish.menu.stream().filter(d -> d.getCalories() > 10000).mapToInt(Dish::getCalories).sum();
+        System.out.println(sum);
+
+        int sum2 = Dish.menu.stream().filter(d -> d.getCalories() > 500).map(Dish::getCalories).reduce(0, Integer::sum);
+        System.out.println(sum2);
     }
 }
