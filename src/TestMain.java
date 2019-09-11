@@ -1,4 +1,3 @@
-import com.sun.tools.hat.internal.util.Comparer;
 import kotlin.reflect.jvm.internal.impl.load.kotlin.KotlinJvmBinaryClass;
 import org.omg.CORBA.portable.ApplicationException;
 

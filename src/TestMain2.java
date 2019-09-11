@@ -1,21 +1,27 @@
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 public class TestMain2 {
-    public static void process(Runnable r){
-        r.run();
+    public static void main(String[] args) {
+        int num1 = 734;
+        int num2 = 893;
+
+        int reverseNum1 = reverseInt(num1);
+        int reverseNum2 = reverseInt(num2);
+
+        System.out.println(Math.max(reverseNum1, reverseNum2));
     }
 
-    public static void main(String[] args) {
-        Runnable r1 = () -> System.out.println("hello world1");
+    private static int reverseInt(int num){
+        int result=0;
 
-        Runnable r2 = new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("hello world2");
-            }
-        };
+        while(num != 0){
+            result = result * 10 + (num % 10);
+            num /= 10;
+        }
 
-        process(r1);
-        process(r2);
-
-        process(() -> System.out.println("hello world3"));
+        return result;
     }
 }
