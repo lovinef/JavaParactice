@@ -2,6 +2,7 @@ package Java;
 
 public class OuterClassMain {
     public static void main(String[] args) {
-        System.out.println(Math.round(30 / 50));
+        OuterClass outerClass = new OuterClass("abcde");
+        OuterClass.InnerClass.showMe();
     }
 }
