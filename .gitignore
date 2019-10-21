@@ -2,3 +2,10 @@
 /out/
 /test/
 !/src/etc/
+
+### Java ###
+# Compiled class file
+*.class
+
+# Log file
+*.log
