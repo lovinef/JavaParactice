@@ -6,11 +6,12 @@ import java.util.Scanner;
 
 public class Test1 {
     public static void main(String[] args) {
-        int a = 0;
+        String str = "1,2,3:4:5|6|7";
 
-        System.out.println(a++);
-        System.out.println(a++);
-        System.out.println(a++);
-        System.out.println(a++);
+        String[] strArray = str.split(",|:");
+        for(String aaaa : strArray){
+            System.out.println(aaaa);
+        }
+
     }
 }
