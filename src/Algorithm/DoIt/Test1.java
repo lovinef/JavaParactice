@@ -6,12 +6,8 @@ import java.util.Scanner;
 
 public class Test1 {
     public static void main(String[] args) {
-        String str = "1,2,3:4:5|6|7";
+        List<Integer> list = Arrays.asList(12,3,4,5,6,7,8,9);
 
-        String[] strArray = str.split(",|:");
-        for(String aaaa : strArray){
-            System.out.println(aaaa);
-        }
-
+        list.forEach(System.out::println);
     }
 }
