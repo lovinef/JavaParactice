@@ -54,8 +54,12 @@ AOP(Aspect Oriented Programming, 관점 지향 프로그래밍)
     스프링빈
         스프링이 제어권을 가지고 직접 만들고 관계를 부여하는 오브젝트
 
-POJO 기반의 프레임워크
-    extends, implements를 없애고 어노테이션을 사용하여 의존도를 낮췄다.
+POJO(Plain Old Java Object)
+    Getter, Setter 메소드로 이루어진 Value Object성의 Bean
+    상속, 인터페이스 구현을 강제하지 않으며, 에노테이션을 강제하지 않는다.
+    특정한 라이브러리나 컨테이너의 기술에 종속되지 않고, 일반적인 형태로 코드를 작성할 수 있다.
+    이는 생산성 향상과, 테스트 작업이 유연해지게 한다.
+    객체지향적인 원리에 충실하면서, 환경과 기술에 종속되지 않고 필요에 따라 재활용될 수 있는 방식으로 설계된 오브젝트
 
 ORM(Object-Relational Mapping)
     객체와 DB의 테이블 매핑
@@ -79,7 +83,10 @@ JPA(Java Persistent API)
             쿼리를 통해 호출할 수 있도록 지원하고 있다.
         러닝커브
             배울 내용이 많다.
-
+    스프링 데이터 JPA
+        Repository 빈 자동 생성
+        쿼리 메소드 자동 구현
+        @EnableJpaRepositories(스프링 부트가 자동으로 설정)
 
 
 OOP(Object-Oriented Programming, 객체 지향 프로그래밍)
@@ -113,5 +120,20 @@ Proxy Pattern(프록시 패턴)
         https://jdm.kr/blog/235
 
 
+Origin
+    URI 스키마(http, https) + hostname + 포트
+
+
+SOP(Single-Origin Policy)
+
+CORS(Cross-Origin Resource Sharing)
+    크로스 브라우징 설정
+    @CrossOrigin(origins = "http://localhost:18080")
+
+
+Spring DBCP
+    HikariCP(기본)
+    Tomcat CP
+    Commons DBCP2
 
 
