@@ -1,0 +1,23 @@
+리플렉션(Reflection)
+    로딩이 완료된 클래스에서 또 다른 클래스를 동적으로 로딩(Dynamic Loading)하여 사용하는것.
+    Class.forName("클래스이름").newInstance
+
+인터프리터(interpreter)
+    자바 컴파일러에 의해 변환된 자바 바이트 코드(.class)를 읽고 해석하는 역할
+
+클래스 로더(Class Loader)
+    동적으로 클래스를 로딩해주는 역할
+
+JIT 컴파일러(Just-In-time compiler)
+    프로그램이 실행중인 런타임에 실제 기계어로 변환해주는 컴파일러
+    동적 번역(Dynamic Translation)이라고도 불리며, 프로그램 실행 속도를 향상시키기 위해 개발됨
+    자바 컴파일러가 생성한 자바 바이트 코드를 런타임에 기계어로 변환하는데 사용
+
+JVM 실행 과정
+    OS로 부터 메모리를 할당 받음
+    자바 컴파일러(javac)가 자바코드(.java)를 읽어 바이트코드(.class)로 변환
+    변환된 Class 파일들을 Class Loader를 통해 JVM 메모리영역(Runtime Data Areas) 영역으로 로딩
+    로딩된 Class 파일들은 Execution engine을 통해 해석
+    해석된 바이트 코드는 Runtime Data Areas에 배치되어 수행
+    수행 과정 중 필요에 따라 Tread Synchronization, GC 같은 관리 작업 수행
+
