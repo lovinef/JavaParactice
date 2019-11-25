@@ -1,0 +1,91 @@
+REST API 구성
+    Resource(자원, URI)
+        서버는 유니크한 ID를 가지는 Resource를 가지며, 클라이언트는 이러한 Resource에 요청을 보낸다.
+    Method(행위, POST등)
+        CRUD 연산 중에서 처리를 위한 연산에 맞는 Method를 사용하여 서버에 요청을 보낸다.
+    Representation of Resource(자원의 형태, JSON)
+        클라이언트와 서버가 데이터를 주고 받는 형태 json, xml, text, rss 등이 있다.
+
+    URL(Uniform Resource Locator) 인터넷상 자원의 위치
+    URI(Uniform Resource Indentifier) 인터넷상 자원을 식별하기 위한 문자열 구성, URI는 URL을 포함
+
+REST(Representational State Transfer)의 특징
+    Uniform(유니폼 인터페이스)
+        URI로 지정한 리소스에 대한 조작을 통일되고 한정적인 인터페이스로 수행하는 아키텍쳐 스타일
+        클라이언트가 플랫폼에 무관하고, 특정 언어나 기술에 종속하지 않는 것을 의미
+        이 특징 덕분에 Rest API는 HTTP를 사용하는 모든 플랫폼에서 요청 가능하고, Loosely Coupling(느슨한 결합) 형태를 갖게 된다.
+    Stateless(무상태성)
+        서버는 각각의 요청을 별개의 것으로 인식하고 처리해야하며, 이전 요청이 다음 요청에 연관되어서는 안된다.
+        Rest API는 세션 정보나 쿠키 정보를 활용하여 작업을 위한 상태정보를 저장하지 않는다.
+        Rest API는 자유도가 높고, 불필요한 정보를 관리하지 않으므로 구현이 단순하다.
+        이러한 무상태성은 서버의 처리방식에 일관성을 부여하고, 부담을 줄여주기 위함이다
+    Cacheable(캐시 가능)
+        HTTP라는 기존 웹표준을 그대로 사용하기 때문에, 웹에서 사용하는 기존 인프라를 그대로 활용 가능.
+        따라서 HTTP 캐싱 기능 적용이 가능하다.
+        HTTP 프로토콜 표준에서 사용하는 Last-Modified 태그나 E-Tag를 이용하여 구현 가능하며, 대량의 요청을 효율적으로 처리할 수 있게 도와준다.
+    Self_descriptiveness(자체 표현 구조)
+        REST API 메시지만 보고도 쉽게 이해할 수 있는 자체 표현 구조로 되어있다.
+        HTTP POST , http://localhost:8080/insertBoardInfo
+        {
+            "boardVO":{
+                "title":"제목",
+                "content":"내용"
+            }
+        }
+    Client - Server 구조
+        자원을 가지고 있는 쪽이 서버, 자원을 요청하는 쪽이 클라이언트이며, 서버는 API를 제공하고
+        클라이언트는 사용자 인증, Context(세션, 로그인 정보) 등을 직접 관리하는 등 역할을 확실히 구분하여 서로 간의 의존성을 줄인다.
+    Layerd System(계층형 구조)
+        서버는 다중 계층으로 구성될 수 있으며 보안, 로드 밸런싱, 암호화 계층을 추가해 구조상의 유연성을 둘 수 있고
+        PROXY, 게이트웨이 같은 네트워크 기반의 중간매체를 사용할 수 있게 한다.
+        하지만 클라이언트는 해당 내용을 알 수 없다.
+
+REST API 디자인 가이드
+    URI는 정보의 자원을 표현해야함.
+    자원에 대한 행위는 HTTP Method(GET, POST, PUT, DELETE)로 표현
+
+    URL 작성법
+        슬래시 구분자(/)는 계층 관계를 나타내는 데 사용
+        URI 마지막 문자로 슬래시(/)를 포함하지 않는다.
+        하이픈(-)은 URI 가독성을 높이는데 사용s
+        밑줄(_)은 URI에 사용하지 않는다.
+        URI 경로에는 소문자가 적합하다.
+        파일 확장자는 URI에 포함시키지 않는다.
+        명사가 리소스, 동사가 메소드
+            글(posts) 조회(GET)        GET /posts
+            글(posts) 생성(POST)       POST /posts
+            글(posts) 수정(PUT)        PUT /posts/:id
+            글(posts) 삭제(DELETE)     DELETE /posts/:id
+
+    자원에 대한 행위는 HTTP Method로 표현한다.
+        GET     select (조회)
+        POST    insert (입력)
+        PUT     update (수정)
+        DELETE  delete (삭제)
+
+        -- 정보 삭제시
+        DELETE /members/1
+        -- 정보 조회시
+        GET /members/show/1     (x)
+        GET /members/1          (o)
+        -- 데이터 입력시
+        GET /members/insert/2 (x)  - GET 메서드는 리소스 생성에 맞지 않습니다.
+        POST /members/2       (o)
+
+응답 상태 코드
+    200 클라이언트의 요청을 정상적으로 수행
+    201 클라이언트가 어떠한 리로스 생성을 요청, 해당 리소스가 성공적으로 생성됨(POST를 통한 리소스 생성 작업시)
+
+    400 요청이 부적절 할 경우
+    401 인증되지 않은 상태에서 보호된 리소스 요청시
+    403 유저 인증상태와 관계 없이 응답하고 싶지 않은 리소스를 클라이언트가 요청시
+        403보다 404를 권고(403은 리소스 존재하다는 의미이기 때문)
+    405 사용 불가능한 Method를 이용했을 경우
+
+    301 요청한 리소스에 대한 URI가 변경되었을 때
+        응답 시 Location Header에 변경된 URI를 적어줘야함
+    500 서버에 문제가 발생했을 경우
+
+
+참고 사이트
+    https://meetup.toast.com/posts/92
