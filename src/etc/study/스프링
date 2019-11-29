@@ -6,8 +6,8 @@
 자바8 이상부터 사용 가능함.
 서블릿 버전은 3.1 이상부터만
 
-스프링 프레임워크
-IOC, AOP, PSA..
+스프링 프레임워크 주요 3대 기술
+IOC, AOP, PSA
 
 IoC(Inversion of Control, 제어의 역전, 의존적 주입)
     객체의 생성부터 생명주기 관리까지 모든 객체에 대한 제어권이 바뀐것을 의미
@@ -144,3 +144,12 @@ Spring DBCP
     HikariCP(기본)
     Tomcat CP
     Commons DBCP2
+
+
+스프링 REST 클라이언트
+    RestTemplate
+        Blocking I/O 기반의 Synchronous API
+        RestTemplateAutoConfiguration
+    WebClient
+        Non-Blocking I/O 기반의 Asynchronous API
+        WebClientAutoConfiguration

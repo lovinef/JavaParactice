@@ -21,3 +21,12 @@ JVM 실행 과정
     해석된 바이트 코드는 Runtime Data Areas에 배치되어 수행
     수행 과정 중 필요에 따라 Tread Synchronization, GC 같은 관리 작업 수행
 
+참조(Reference)
+    .get() // return Object
+
+
+lombok 에서는 toString()을 직접 구현해라.
+    무한루프에 빠질수가 있다.
+컨트롤러에서는 Entity를 절대 반환하지 말아라.(JPA 사용시)
+    무한루프에 빠질수가 있다.
+    API 스팩이 바뀔수가 있다.
