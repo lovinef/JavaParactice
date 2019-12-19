@@ -1,0 +1,5 @@
+Errors 와 BindingResult 중 무엇을 쓰는게 더 좋을까요?
+    Errors가 더 상위 인터페이스이고 대부분의 경우엔 Errors를 써도 무방합니다.
+    BindingResult  API를 읽어보시고 그안에 있는 메소드가 필요한 경우에만 BindingResult를 쓰는게 좋겠습니다.
+
+linkTo() 메소드는 컨트롤러나, 핸들러 메소드로부터 URI 정보 읽어올 때 쓰는 메소드 입니다. 스프링 HATEOAS 프로젝트에서 제공하는 유틸리티라고 생각하시면 되요.

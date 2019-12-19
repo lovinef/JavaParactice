@@ -1,0 +1,122 @@
+JPQL은 SQL을 추상화해서 특정 데이터베이스 SQL에 의존하지 않는다.
+
+엔티티와 속성은 대소문자 구분(Member, age)
+JPQL 키워드는 대소문자 구분 X(SELECT, FROM , where)
+엔티티 이름 사용, 테이블 이름이 아님
+별칭은 필수(as 생략 가능)
+
+ANSI 규약의 쿼리문은 모두 지원함
+    COUNT, SUM, AVG ...
+    GROUP BY, HAVING, ORDER BY ...
+    TypeQuery 반환 타입이 명확할 떄 사용
+    Query 반환 타입이 명확하지 않을 때 사용
+
+JPQL 기본 문법
+    TypedQuery : 리턴 타입이 확실한 경우 사용
+        TypedQuery<Member> query1 = em.createQuery("select m from Member m", Member.class);
+        TypedQuery<String> query2 = em.createQuery("select m.username from Member m", String.class);
+    Query : 리턴 타입이 정확하지 않을 경우 사용
+        Query query3 = em.createQuery("select m.username, m.age from Member m");
+    단순 값을 DTO로 조회 : 패키지 명을 전부 적어야함
+        List resultList = em.createQuery("select new jpql.MemberDTO(m.username, m.age) from Member m").getResultList();
+
+결과값을 collection 으로 받아올때는 .getResultList()
+    결과가 없으면 빈 리스트 반환(null X)
+단일 결과값을 받을때는 .getSingleResult()
+    결과값이 정확히 하나여야함.
+    결과가 없다(NoResultException)
+    둘 이상(NonUniqueException)
+
+파라미터 바인딩
+    이름기준, 위치 기반이 있으나 위치 기반은 사용 하지 않는게 좋다.
+    Member singleResult = em.createQuery("select m from Member m where m.username = :username", Member.class)
+                        .setParameter("username", "member1")
+                        .getSingleResult();
+    System.out.println(singleResult.getUsername());
+
+프로젝션
+    SELECT 절에 조회할 대상을 지정하는 것
+    프로젝션 대상 : 엔티티, 임베디드 타입, 스칼라 타입(숫자, 문자 등 기본 데이터 타입)
+    em.createQuery("select m from Member m where m.username = :username", Member.class);
+    조회 즉시 엔티티에 등록되며, 수정시 update 쿼리가 발생한다.
+
+페이징 API
+    setFirstResult(int startPosition) : 조회 시작 위치(0부터 시작)
+    setMaxResults(int maxResult) : 조회할 데이터 수
+
+내부 조인
+    SELECT m FROM Member m [INNER] JOIN m.team t
+외부 조인
+    SELECT m FROM Member m LEFT [OUTER] JOIN m.team t
+세타 조인
+    SELECT count(m) from Member m, Team t where m.username = t.name
+
+연관관계 없는 엔티티 외부 조인
+    SELECT m, t
+    FROM Member m
+    LEFT JOIN Team t
+    ON m.usernmae = t.name
+
+서브 쿼리
+    select m
+    from Member m
+    where m.age > (select avg(m2.age) from Member m2)
+
+    select m from Member m
+    where (select count(o) from Order o where m = o.member) > 0
+
+    FROM절 서비 쿼리는 불가능하다. -> native로 해결
+        조인으로 해결해야됨
+
+타입 표현
+    문자 : 'HELLO', 'She''s'
+    숫자 : 10L, 10D, 10F
+    Boolean : TRUE, FALSE
+    ENUM : jpabook.MemberType.Admin(패키지명 포함)
+    엔티티 타입
+
+**페치 조인(fetch join) - 최적화가 필요하면 사용할것.
+    SQL 조인 종류가 아님
+    연관된 엔티티나 컬렉션을 SQL 한번에 함께 조회하는 기능
+    JPQL 에서 최적화가 필요한 곳에서 사용함
+    join fetch 명령어 사용
+    지연 로딩으로 설정되어있어도 fetch join이 우선임
+    쿼리는 inner join으로 생성되나, entity 객체에 from 절의 모든 객체가 자동으로 담기게 된다.
+    inner join은 from 절의 모든 객체가 자동 세팅이 안된다.
+
+    String query = "select m from Member m join fetch  Team t on t.id = m.team.id";
+    List<Member> resultList = em.createQuery(query, Member.class).getResultList();  // 정상 실행되며 Member 내 Team도 자동 매칭됨
+
+    String query = "select m, t from Member m inner join Team t on t.id = m.team.id";
+    List<Member> resultList = em.createQuery(query, Member.class).getResultList();  // 오류 발생
+
+    조인 대상에는 별칭을 줄 수 없다.
+    둘 이상의 컬렉션은 페치 조인할 수 없다.
+    페치 조인시 페이징 API를 사용하면 안된다.
+        일대일, 다대일 같은 단일 값 연관 필드들은 페치 조인해도 페이징 가능.
+        쿼리에서 페이징 처리를 안하고 모든 데이터를 메모리에 불러온 이후에 페이징 처리를 함.
+    객체 그래프를 유지할 떄 사용하면 효과적임
+    여러 테이블을 조회하여 엔티티가 가진 모양이 아닌 다른 결과를 내야 하면, 일반 조인을 사용하고 필요한 데이터만 조회해서 DTO로 반환하는게 효과적임.
+
+엔티티 직접 사용
+    해당하는 엔티티의 키값을 자동으로 매핑한다.
+        "select m from Member m where m.team = :team"
+        setParameter("team", teamA);
+
+Named 쿼리
+    Entity에 정의
+        @NamedQuery(
+            name = "Member.findByUsername" ,
+            query = "select m from Member m where m.username = :username"
+        )
+    XML에 정의
+        MyBatis 처럼 사용 가능
+    XML 정의가 Entity 정의 보다 우선임.
+
+벌크 연산
+    조건에 해당하는 모든 데이터를 일괄 수정시 사용
+        int resultCount = em.createQuery("update Member  m set m.age = 20").executeUpdate();
+    insert into select 사용 가능.
+    벌크 연산은 영속성 컨텍스트를 무시하고 DB에 직접 쿼리 수행
+    ** 벌크 연산을 먼저 수행, 벌크 연산 수행 후 영속성 컨텍스트 초기화
+        em.clear(); 반드시 수행할것(DB 수정 이후 영속성 컨텍스트를 초기화하지 않으면, 작업한 내역이 보이지 않음.)

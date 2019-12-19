@@ -1,0 +1,137 @@
+페이징 처리
+**페이지수는 0부터 시작한다
+
+public interface MemberRepository extends JpaRepository<Member, Long> {
+    // 기본 페이징 처리(totalcnt 조회 가능)
+    Page<Member> findByAge(int age, Pageable pageable);
+    // 가져오려는 수보다 +1 더 가져와 구현 가능(totalcnt 없음), 모바일 device에서 구현할때 사용함.(미리 로딩 가능)
+    Slice<Member> findByAge(int age, Pageable pageable);
+    // 카운트 쿼리를 분리해서 사용이 가능하다.
+    @Query(countQuery = "")
+    ...
+}
+
+// 구현부
+int page = 0;
+int limit = 3;
+PageRequest pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "username"));
+Page<Member> page = memberRepository.findByAge(findAge, pageRequest);
+Page<MemberDto> map = page.map(member -> new MemberDto(member.getUsername(), member.getAge())); // API 전달시 entity를 반환하면 안되므로 변환
+
+List<Member> content = page.getContent();   // 검색된 내용
+
+page.getTotalElements() // 전체 로우수
+page.getNumber()    // 현재 페이지
+page.getTotalPages()    // total 페이지수
+page.isFirst()  // 첫번째 페이지 여부
+page.hasNext()  // 다음 페이지 여부
+
+
+** 벌크 수정시 영속성 컨텍스트를 무시하고 작업하기 때문에, 영속성 컨텍스트의 값이 변경되지 않는다.
+   따라서 벌크 수정 이후 즉시 em.flush(); em.clear(); 할 것.
+
+사용자 정의 리포지토리 구현
+
+
+사용자 정의 리포지토리 구현이 가능
+
+// 기능 인터페이스 생성
+public interface MemberRepositoryCustom {
+    List<Member> findMemberCustom();
+}
+
+// 인터페이스 구현
+@RequiredArgsConstructor
+public class MemberRepositoryImpl implements MemberRepositoryCustom {   // 이름을 맞춰야함 class명 + impl
+    private final EntityManager em; // 주입 권장방식
+
+    @Override
+    public List<Member> findMemberCustom() {
+        return em.createQuery("select m from Member  m", Member.class).getResultList();
+    }
+}
+
+// 인터페이스 상속
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom {
+}
+
+화면 조회시 사용되는 복잡한 쿼리들은 기존 리포지토리를 사용하지 말고, 새로운 리포지토리를 생성하여 사용 권장
+
+Auditing
+    엔티티 생성, 변경할 때 변경한 사람과 시간을 알고 싶은 경우
+    등록일 수정일 등록자 수정자
+
+        Spring Boot Main Class 수정
+        Main class에 @EnableJpaAuditing 추가
+
+        // 함수 추가
+        @Bean
+        public AuditorAware<String> auditorProvider(){  // createdBy, modifiteBy 어노테이션의 값을 자동으로 설정해준다.
+            return () -> Optional.of(UUID.randomUUID().toString());
+        }
+
+        // 클래스 추가
+        @EntityListeners(AuditingEntityListener.class)
+        @MappedSuperclass
+        @Getter
+        public class BaseEntity {
+            @CreatedDate
+            @Column(updatable = false)
+            private LocalDateTime createdDate;
+
+            @LastModifiedDate
+            private LocalDateTime lastModifiedDated;
+
+            @CreatedBy
+            @Column(updatable = false)
+            private String createdBy;
+
+            @LastModifiedBy
+            private String lastModifiedBy;
+        }
+
+
+도메인 클래스 컨버터(추천하지 않는 방법이다, 사용은 무조건 조회용으로만 쓰자)
+    @GetMapping("/members2/{id}")
+    public String findMember2(@PathVariable("id") Member member){
+        return member.getUsername();
+    }
+
+페이징
+    // 구현
+    @GetMapping("/members")
+    public Page<Member> list(@PageableDefault(size = 2) Pageable pageable){ // @PageableDefault(size = 2) 내에 기본 페이징 설정값 전달 가능
+        // return memberRepository.findAll(pageable);  // 엔티티를 반환하면 안되고, DTO를 반환
+        Page<Member> page = memberRepository.findAll(pageable);
+        return page.map(m -> new MemberDto(m.getId(), m.getUsername(), null));
+    }
+
+    // 호출
+    http://localhost:8080/members?page=0&size=3&sort=id,desc
+
+SAVE 메서드 주위할것
+    새로운 엔티티인 경우 저장
+    새로운 엔티티가 아닌 경우 MERGE 함 ***
+    @GeneratedValue 인 경우 식별자가 없을 경우 SAVE 가 호출되나
+    @Id 만 사용한 경우 식별자가 있는 것으로 간주하여 SELECT SAVE가 호출된다.
+    매우 비효율적이므로  implements Persistable<ID>의 isNew를 구현하여 직접 SAVE가 호출되도록 할 수 있다.
+        @Entity
+        @Getter
+        @EntityListeners(AuditingEntityListener.class)
+        @NoArgsConstructor(access = AccessLevel.PROTECTED)
+        public class Item implements Persistable<String> {
+            @Id
+            private String id;
+
+            @CreatedDate
+            private LocalDateTime createdDate;
+
+            public Item(String id) {
+                this.id = id;
+            }
+
+            @Override
+            public boolean isNew() {
+                return createdDate == null;
+            }
+        }
