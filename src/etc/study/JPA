@@ -1,3 +1,7 @@
+중요점
+    모든 연관관계를 Lazy로 설정
+
+
 객체와 관계형 데이터베이스의 차이
     상속
     연관관계(참조)
@@ -86,8 +90,9 @@ JPA 가장 중요한 2가지
 변경 감지(Dirty Checking)
     수정시 스냅샷을 통해 기존 엔티티와 비교하여 변경이 있는 경우 수정 쿼리 생성
 지연 로딩(Lazy Loading)
-flush(
+flush
     영속성 컨텍스트의 변경 내용을 즉시 데이터베이스에 반영
+    commit, query 사용시 자동 사용
 
 엔티티 매핑
     객체 - 테이블 : @Entity, @Table
@@ -170,4 +175,215 @@ final 클래스, enum, interface, inner 클래스 사용 X
     편리해 보이지만 실무에서는 사용 X
     중간 테이블을 사용하여 처리하는 방식
 
+@MappedSuperclass
+    엔티티가 공통으로 사용하는 매핑 정보를 모으는 역할
+    주로 등록일, 수정일, 등록자, 수정자 같은 공통 컬럼
+    상속관계 매핑 X
+    엔티티 X, 테이블 매핑 X
+    조회, 검새 불가
+    위 조건으로 추상 클래스 권장
 
+프록시
+    em.find() 실제 엔티티 객체 조회
+    em.getReference() 데이터 조회를 미루는 가짜 엔티티 객체 조회
+    실제 사용될 경우
+    프록시 객체는 처음 사용할때 한번만 초기화
+    프록시 객체 초기화시 프록시 객체가 실제 엔티티로 바뀌는것이 아니며, 초기화가 되면 프록시 객체를 통해서 실제 엔티티에 접근 가능
+    프록시 객체는 원본 엔티티를 상속 받으므로, 비교시 instance of 사용
+
+즉시 로딩과 지연 로딩
+    지연 로딩
+        @ManyToOne(fetch = FetchType.LAZY)
+        해당 객체는 프록시 객체로 생성되며, get 할때 쿼리를 수행하여 가져옴.
+        @BatchSize(int) 로 쿼리를 하나만 수행하게 할 수 있다.
+    즉시 로딩
+        @ManyToOne(fetch = FetchType.EAGER)
+        연관된 엔티티 객체 조회시 하나의 쿼리로 조회하며, 엔티티 객체가 된다.
+        JPQL에서 (1 + N) 문제를 일으킨다.(호출하지 않은 쿼리도 EAGER 매치가 된 객체 쿼리가 수행됨)
+        따라서 상상하지 못한 쿼리가 수행됨.
+    *** 실무에서는 지연 로딩을 사용하라
+        @ManyToOne, @OneToOne은 기본이 즉시 로딩 -> 지연 로딩으로 설정
+        @OneToMany, @ManyToMany는 기본이 지연 로딩
+        JPQL fetch 조인이나, 엔티티 그래프 기능을 사용할 것
+
+영속성 전이(CASCADE)
+    ** 특정 엔티티가 개인 소유일 때 사용
+    자동 영속 상태 변환을 하려는 엔티티가 다른 연관관계가 있을 경우 사용하면 안된다.
+    특정 엔티티를 영속 상태로 만들 때 연관된 엔티티도 함께 영속 상태로 변환
+    ALL, PERSIST 위주로 사용함.
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    private List<Child> childList = new ArrayList<>();
+
+    Child child1 = new Child();
+    Child child2 = new Child();
+
+    Parent parent = new Parent();
+    parent.addChild(child1);
+    parent.addChild(child2);
+
+//    em.persist(child1);
+//    em.persist(child2);
+    em.persist(parent);
+
+고아 객체
+    ** 특정 엔티티가 개인 소유일 때 사용
+    부모 엔티티와 연관관계가 끊어진 자식 엔티티 자동 삭제
+        orphanRemoval = true
+    참조하는 곳이 하나일 때 사용해야함.
+
+CascadeType.ALL + orphanRemoval = true 인 경우 부모 엔티티를 통해 자식의 생명 주기를 관리할 수 있음.
+    도메인 주도 설계의 Aggregate Root 개념을 구현할 때 유용
+
+JPA 의 데이터 타입 분류
+    엔티티 타입
+        @Entity로 정의하는 객체
+        데이터가 변해도 식별자로 추적 가능
+    값 타입
+        int, Integer, String처럼 단순히 값으로 사용하는 자바 기본 타입이나 객체
+        식별자가 없으므로 변경시 추적 불가
+        불변 객체로 만들어야 부작용을 피할수 있다.
+
+        기본 타입(primitive type)
+            자바 기본 타입(int, double)
+            래퍼 클래스(Integer, Long)
+            String
+            생명주기를 엔티티에 의존
+                회원을 삭제하면 이름, 나이 필드도 함께 삭제
+            값 타입은 공유하면 안됨
+                회원 이름 변경시 다른 회원의 이름도 함께 변경되면 안됨
+                기본 타입은 항상 '값'을 복사므로, 공유되지 않음
+        임베디드 타입(embedded type, 복합 값 타입)
+            새로운 값 타입을 직접 정의할 수 있음.
+            주로 기본 값 타입을 모아서 만든다.
+            재사용 가능
+            해당 값 타입만 사용하는 의미 있는 메소드를 만들 수 있음.
+            생명 주기는 엔티티에 의존한다.
+        컬렉션 값 타입(collection value type)
+            값 타입을 하나 이상 저장할때 사용
+            데이터베이스는 컬렉션을 같은 테이블에 저장할 수 없다.
+            컬렉션을 저장하기 위한 별도의 테이블이 필요함.
+                @ElementCollection
+                @CollectionTable(name = "ADDRESS", joinColumns = @JoinColumn(name = "MEMBER_ID"))
+                private List<Address> addressHistory = new ArrayList<>();
+
+                member.getAddressHistory().add(new Address("old city1","old street1","old zip code1"));
+
+JPA는 다양한 쿼리 방법을 지원
+    JPQL
+    QueryDSL
+    네이티브 SQL
+    JDBC API 직접 사용, MyBatis, SpringJdbcTemplate 함께 사용
+
+JPQL(객체 지향 SQL)
+    엔티티 중심으로 개발
+    검색에도 테이블이 아닌 엔티티 객체를 대상으로 검색
+    애플리케이션이 필요한 데이터만 DB에서 불러오려면 결국 검색 조건이 포함된 SQL 필요
+        EntityManager.find()
+        객체 그래프 탐색(a.getB().getC())
+    ANSI 표준 문법은 모두 지원
+    JPQL은 엔티티 객체를 대상으로 쿼리
+        List<Member> resultList = em.createQuery(
+                    "select m from Member m where m.username like '%kim%'", // 테이블명이 아니라 엔티티 명
+                    Member.class
+            ).getResultList();
+    동적 쿼리 생성이 매우 어려움
+Criteria
+    사용이 매우 복잡함. 사용 안하는것을 추천함.
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Member> query = cb.createQuery(Member.class);
+        Root<Member> m = query.from(Member.class);
+
+        CriteriaQuery<Member> cq = query.select(m).where(cb.equal(m.get("username"), "kim"));
+        List<Member> resultList = em.createQuery(cq).getResultList();
+** QueryDSL(오픈소스)
+    자바 코드로 JPQL을 작성할 수 있음
+    컴파일 시점에 문법 오류를 찾을 수 있음
+    동적쿼리 작성 편함
+    단순하고 쉬움
+    실무 사용 권장
+네이티브 SQL
+    JPA가 제공하는 SQL을 직접 사용 가능
+JDBC 직접 사용, SpringJdbcTemplate 등
+    영속성 컨텍스트를 적절한 시점에 강제로 플러시 필요
+
+
+
+Controller, Web : 웹계층
+service : 비지니스 로직, 트랜잭션 처리
+repository : JPA를 직접 사용하는 계층, 엔티티 매니저 사용
+domain : 엔티티가 모여 있는 계층, 모든 계층에서 사용
+
+도메인 모델 패턴(ORM 사용시 사용함)
+    핵심 비지니스 로직은 엔티티에서 작성한다.
+트랜잭션 스크립트 패턴(mybatis 사용시)
+    서비스 계층에서 대부분의 로직을 처리하는 것
+
+
+서비스 계층은 단순 엔티티에 필요한 요청을 위임하는 역할
+
+
+***변경 감지와 병합(merge)
+준영속 엔티티
+영속성 컨텍스트가 관리하지 않는 엔티티로 update해도 데이터는 변경되지 않음.
+    임의로 만들어낸 엔티티
+        Book book = new Book();
+        book.setId(form.getId());
+        book.setName(form.getName());
+준영속 엔티티 수정하는 방법(병합 사용은 추천하지 않음
+    변경 감지 기능 사용(Dirty Checking), setter 대신 함수를 이용해서 변경하도록 하라
+        Item findItem = itemRepository.findOne(itemId);
+        findItem.setPrice(bookParam.getPrice());
+        findItem.setName(bookParam.getName());
+        findItem.setStockQuantity(bookParam.getStockQuantity());
+    병합 사용
+        파라미터로 넘어온 준영속 엔티티의 식별자 값으로 1차 캐시에서 엔티티 조회
+        조회된 영속 엔티티의 값을 준영속 엔티티의 값으로 모두 교체한다.(*** 수정하려는 필드가 아닌 경우에도 수정이 된다.)
+        병합시 값이 없으면 null로 수정함
+        작업 이후 엔티티를 반환함.
+            Book book = new Book();
+            book.setId(form.getId());
+            book.setName(form.getName());
+            Entity entity = em.merge(book);
+
+트랜잭션이 있는 서비스에 엔티티를 전달하지 말라
+    컨트롤러에서는 엔티티를 사용하지 말고, 엔티티 내부의 값을 파라미터로 전달해라.
+
+
+컬렉션 조회(OneToMany)
+    Fetch 조인 사용시 페이징 처리는 하지 말것.
+        모든 데이터 조회 이후 메모리에서 페이징 처리하므로 큰 장애가 발생할 수 있음.
+    Fetch 조인 페이징 처리 방법
+        XtoOne 관계는 모두 Fetch 조인
+        컬렉션은 지연 로딩으로 조회
+        spring:
+          jpa:
+            properties:
+              hibernate:
+                default_batch_fetch_size: 100   // in 쿼리 갯수 lazy 로딩 값 한번에 호출
+
+
+복합키는 복합키 클래스를 생성해서 처리해야함.
+
+
+Auditing
+    엔티티 생성, 변경할 때 변경한 사람과 시간을 알고 싶은 경우
+    등록일 수정일 등록자 수정자
+        @MappedSuperclass
+        public class JpaBaseEntity {
+            @Column(updatable = false)  // 변경 방지
+            private LocalDateTime createdDate;
+            private LocalDateTime updatedDated;
+
+            @PrePersist // insert 전, @PostPersist
+            public void prePersist(){
+                LocalDateTime now = LocalDateTime.now();
+                this.createdDate = now;
+                this.updatedDated = now;
+            }
+
+            @PreUpdate  // update 전, @PostUpdate
+            public void preUpdate(){
+                updatedDated = LocalDateTime.now();
+            }
+        }
