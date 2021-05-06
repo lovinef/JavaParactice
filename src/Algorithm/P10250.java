@@ -79,7 +79,7 @@ public class P10250 {
         // 손놈이 들어갈 열 번호 계산, N / H + 1
         int colNum = 0;
         if(N % H == 0){
-            colNum = N / H; // 첫 열로 끝나면 내 열은 1이어야 하므로
+            colNum = N / H;
         }else{
             colNum = (N / H) + 1;
         }
